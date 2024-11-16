@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from tensorflow.keras import datasets, layers, models
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.layers import LeakyReLU
 
 
 
@@ -12,22 +13,24 @@ from tensorflow.keras.callbacks import EarlyStopping
 ##############################################################################
 
 ##### Image sizing
-width, height, channel = 192, 192, 3
+width, height, channel = 256, 256, 3
 batch_size_setting = 64
 
 ##### Modifications
-# Set up data augmentation for training and re-scaling for validation/test
+# Set up data augmentation for training and re-scaling for validation/test. 
+# I picked 0.18 for each of these because it seems reasonable that aircraft mechanics
+# be trained to take consistent photos. 
 train_datagen = ImageDataGenerator(
     rescale=1.0/255,            # Converting pixel RGB ranges to a scale of 0-1. 
-    shear_range=0.15,           # Adding some tilt randomness
-    zoom_range=0.15,            # Adding some zoom randomness
+    shear_range=0.18,           # Adding some tilt randomness
+    zoom_range=0.18,            # Adding some zoom randomness
     horizontal_flip=True        # Adding horizontal flipping randomly
 )
 
 test_datagen = ImageDataGenerator(
     rescale=1.0/255,            # Converting pixel RGB ranges to a scale of 0-1. 
-    shear_range=0.15,           # Adding some tilt randomness
-    zoom_range=0.15,            # Adding some zoom randomness
+    shear_range=0.18,           # Adding some tilt randomness
+    zoom_range=0.18,            # Adding some zoom randomness
     horizontal_flip=True        # Adding horizontal flipping randomly
 )
 
@@ -62,7 +65,7 @@ test_generator = test_datagen.flow_from_directory(
 )
 
 ##############################################################################
-# Step 2: Neural Network Architecture Design 
+# Step 2/3: Neural Network Architecture and Hyperparameters
 ##############################################################################
 
 model = models.Sequential()
@@ -70,26 +73,29 @@ model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(width, heigh
 model.add(layers.MaxPooling2D((2, 2)))
 model.add(layers.Conv2D(64, (3, 3), activation='relu'))
 model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Conv2D(128, (3, 3), activation='relu'))
+model.add(layers.Conv2D(128, (3, 3), activation=LeakyReLU(alpha=0.1))) # Why not, let's see what it does
 
 model.add(layers.Flatten())
 
 model.add(layers.Dense(128, activation='relu'))
-model.add(layers.Dropout(0.5))  # Dropout layer with 50% rate
-model.add(layers.Dense(3, activation='softmax'))  # Softmax for probabilities
+#model.add(layers.Dropout(0.2))  # Dropout layer with 20% rate
+model.add(layers.Dense(3, activation='softmax'))  
 
 
 # debug
 model.summary()
 
 model.compile(optimizer='adam',
-              loss=tf.keras.losses.CategoricalCrossentropy(),  # Matches one-hot labels
+              loss=tf.keras.losses.CategoricalCrossentropy(),
               metrics=['accuracy'])
 
-early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
-history = model.fit(train_generator, epochs=50,
-                    validation_data=validation_generator,
-                    callbacks=[early_stopping])
+#early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+history = model.fit(train_generator, epochs=15,
+                    validation_data=validation_generator)
+                    #callbacks=[early_stopping])
+
+test_loss, test_accuracy = model.evaluate(test_generator)
+print(f"Test Accuracy: {test_accuracy:.2f}")
 
 
 ##### Graphing
@@ -114,3 +120,8 @@ plt.ylim([0, max(max(history.history['loss']), max(history.history['val_loss']))
 plt.legend(loc='upper right')
 plt.title('Training and Validation Loss')
 plt.show()
+
+# Testing Metrics
+print(f"Test Loss: {test_loss:.4f}")
+print(f"Test Accuracy: {test_accuracy:.4f}")
+
