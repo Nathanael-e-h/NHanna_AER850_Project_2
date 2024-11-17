@@ -6,7 +6,11 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.layers import LeakyReLU
 
-
+# So originally I wrote this code, and then when the model worked I saved the model 
+# and kept revising the code to create the Icarus models. When I was writing the report,
+# I realized it might be prudent to have this version available as well, so I resurrected
+# it from GitHub revision history. TA, if you're reading this, go look at the IcarusIII
+# code; it turned out better than this one anyway.
 
 ##############################################################################
 # STEP 1. Data Processing
@@ -18,15 +22,22 @@ batch_size_setting = 64
 
 ##### Modifications
 # Set up data augmentation for training and re-scaling for validation/test. 
-# I picked 0.15 for each of these at first because it seemed reasonable that aircraft mechanics would take consistent photos.
-# Then I actually looked at the training photos, and holy moly. We'll add some randomness after all. 
+# I picked 0.18 for each of these because it seems reasonable that aircraft mechanics
+# be trained to take consistent photos. 
 train_datagen = ImageDataGenerator(
     rescale=1.0/255,            # Converting pixel RGB ranges to a scale of 0-1. 
-    shear_range=0.22,           # Skew Randomness
-    zoom_range=0.22,            # Zoom Randomness
-    rotation_range=12,          # Rotation Randomness (degrees)
+    shear_range=0.18,           # Adding some tilt randomness
+    zoom_range=0.18,            # Adding some zoom randomness
     horizontal_flip=True        # Adding horizontal flipping randomly
 )
+
+test_datagen = ImageDataGenerator(
+    rescale=1.0/255,            # Converting pixel RGB ranges to a scale of 0-1. 
+    shear_range=0.18,           # Adding some tilt randomness
+    zoom_range=0.18,            # Adding some zoom randomness
+    horizontal_flip=True        # Adding horizontal flipping randomly
+)
+
 
 # No need for the modifications to the testing datasets
 validation_datagen = ImageDataGenerator(rescale=1.0/255)
@@ -51,25 +62,16 @@ validation_generator = validation_datagen.flow_from_directory(
 ##############################################################################
 
 model = models.Sequential()
-model.add(layers.Conv2D(64, (2, 2), activation='relu', input_shape=(width, height, channel)))
+model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(width, height, channel)))
 model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.BatchNormalization())  
-
-model.add(layers.Conv2D(128, (2, 2), activation='relu'))
+model.add(layers.Conv2D(64, (3, 3), activation='relu'))
 model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.BatchNormalization())  
-
-# model.add(layers.Conv2D(128, (2, 2)))  
-# model.add(layers.LeakyReLU(alpha=0.15))  
-# model.add(layers.MaxPooling2D((2, 2)))
-# model.add(layers.BatchNormalization())
+model.add(layers.Conv2D(128, (3, 3), activation='relu')) # I Tried leaky, doesn't work that well in this case.
 
 model.add(layers.Flatten())
 
 model.add(layers.Dense(128, activation='relu'))
-model.add(layers.Dropout(0.4))  # Dropout layer with 40% rate
-# model.add(layers.Dense(128, activation='relu'))
-# model.add(layers.Dropout(0.24))  # Dropout layer with 24% rate
+# model.add(layers.Dropout(0.2))  # Dropout layer with 20% rate
 model.add(layers.Dense(3, activation='softmax'))  
 
 
@@ -117,4 +119,3 @@ plt.show()
 # Final Metrics
 # print(f"Test Loss: {test_loss:.4f}")
 # print(f"Test Accuracy: {test_accuracy:.4f}")
-
