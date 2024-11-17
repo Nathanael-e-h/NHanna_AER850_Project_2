@@ -58,16 +58,16 @@ validation_generator = validation_datagen.flow_from_directory(
 ##############################################################################
 
 model = models.Sequential()
-model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(width, height, channel)))
+model.add(layers.Conv2D(64, (3, 3), activation='relu', input_shape=(width, height, channel)))
 model.add(layers.MaxPooling2D((2, 2)))
 model.add(layers.Conv2D(64, (3, 3), activation='relu'))
 model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Conv2D(128, (3, 3), activation='relu')) # I Tried leaky, doesn't work that well in this case.
+model.add(layers.Conv2D(128, (3, 3), activation='relu')) # I tried leaky, doesn't work that well in this case.
 
 model.add(layers.Flatten())
 
 model.add(layers.Dense(128, activation='relu'))
-# model.add(layers.Dropout(0.2))  # Dropout layer with 20% rate
+model.add(layers.Dropout(0.25))  # Dropout layer with 25% rate
 model.add(layers.Dense(3, activation='softmax'))  
 
 
@@ -79,11 +79,13 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 
 #early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
-history = model.fit(train_generator, epochs=12,
+history = model.fit(train_generator, epochs=32,
                     validation_data=validation_generator)
                     #callbacks=[early_stopping])
 
-model.save('LifeIsSoupIAmFork.keras')
+# The Icarus II model adds a dropout layer, bumps up the filters on the first layer,
+# and nearly triples the epochs. These tuning params seem good so I'm gonna send it and see what happens.
+model.save('IcarusII_ElectricBoogaloo.keras')
 
 ##############################################################################
 # Step 4: Model Evaluation
