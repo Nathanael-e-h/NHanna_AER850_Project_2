@@ -66,8 +66,8 @@ model.add(layers.Conv2D(128, (3, 3), activation='relu')) # I tried leaky, doesn'
 
 model.add(layers.Flatten())
 
-model.add(layers.Dense(128, activation='relu'))
-model.add(layers.Dropout(0.25))  # Dropout layer with 25% rate
+model.add(layers.Dense(256, activation='relu'))
+model.add(layers.Dropout(0.33))  # Dropout layer with 33% rate
 model.add(layers.Dense(3, activation='softmax'))  
 
 
@@ -79,13 +79,17 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 
 #early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
-history = model.fit(train_generator, epochs=32,
+history = model.fit(train_generator, epochs=40,
                     validation_data=validation_generator)
                     #callbacks=[early_stopping])
 
 # The Icarus II model adds a dropout layer, bumps up the filters on the first layer,
 # and nearly triples the epochs. These tuning params seem good so I'm gonna send it and see what happens.
-model.save('IcarusII_ElectricBoogaloo.keras')
+
+# The Icarus III model ups the dropout to 33%, doubles the dense layer filters, and adds eight more epochs. 
+# It exists because the IcarusII graphs didn't save properly, and I'm too stubborn to recreate them manually
+# like a normal person would. God help my poor PC. 
+model.save('IcarusIII_RevengeOfTheIDE.keras')
 
 ##############################################################################
 # Step 4: Model Evaluation
